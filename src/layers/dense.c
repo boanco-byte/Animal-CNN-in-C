@@ -85,3 +85,42 @@ Tensor *dense_forward(DenseLayer *layer, Tensor *input) {
 
     return output;
 }
+
+Tensor *dense_backward(DenseLayer *layer, Tensor *input, Tensor *output_grad, float learning_rate) {
+    if (!layer || !input || !input->data || !output_grad || !output_grad->data) {
+        fprintf(stderr, "Invalid arguments to dense_backward\n");
+        return NULL;
+    }
+
+    int input_size = input->width * input->height * input->channels;
+    int output_size = output_grad->width * output_grad->height * output_grad->channels;
+
+    if (input_size != layer->input_size) {
+        fprintf(stderr, "Input size mismatch in dense_backward\n");
+        return NULL;
+    }
+
+    if (output_size != layer->output_size) {
+        fprintf(stderr, "Output size mismatch in dense_backward\n");
+        return NULL;
+    }
+
+    Tensor *input_grad = tensor_create(input->width, input->height, input->channels);
+    if (!input_grad) return NULL;
+
+    for (int i = 0; i < input_size; i++) {
+        input_grad->data[i] = 0.0f;
+    }
+
+    for (int i = 0; i < output_size; i++) {
+
+        for (int j = 0; j < input_size; j++) {
+            input_grad->data[j] += output_grad->data[i] * layer->weights[i * input_size + j];
+            layer->weights[i * input_size + j] -= input->data[j] * output_grad->data[i] * learning_rate;
+        }
+
+        layer->biases[i] -= output_grad->data[i] * learning_rate;
+    }
+
+    return input_grad;
+}

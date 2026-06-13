@@ -106,7 +106,6 @@ Tensor *cnn_forward(CNN *cnn, Image *img) {
     Tensor *conv_out = conv(
         t,
         cnn->conv1_kernel,
-        NULL,
         cnn->conv1_kernel_size,
         cnn->conv1_out_channels
     );
@@ -158,4 +157,105 @@ Tensor *cnn_forward(CNN *cnn, Image *img) {
     softmax_forward(fc_out);
 
     return fc_out;
+}
+
+
+float cnn_train(
+    CNN *cnn,
+    Image *img,
+    int target_class,
+    float learning_rate)
+{
+    /* ---------- FORWARD ---------- */
+
+    Tensor *input = image_to_tensor(img);
+
+    Tensor *conv_out = conv(
+        input,
+        cnn->conv1_kernel,
+        cnn->conv1_kernel_size,
+        cnn->conv1_out_channels);
+
+    Tensor *relu_out = relu_forward(conv_out);
+
+    Tensor *pool_out = max_pooling(
+        relu_out,
+        cnn->pool_size,
+        cnn->pool_stride);
+
+    Tensor *flatten_out = flatten(pool_out);
+
+    Tensor *fc_out = dense_forward(
+        cnn->fc1,
+        flatten_out);
+
+    softmax_forward(fc_out);
+
+    /* ---------- LOSS ---------- */
+
+    float loss =
+        cross_entropy_loss(fc_out, target_class);
+
+    /* ---------- BACKWARD ---------- */
+
+    Tensor *grad =
+        cross_entropy_gradient(
+            fc_out,
+            target_class);
+
+    Tensor *fc_grad =
+        dense_backward(
+            cnn->fc1,
+            flatten_out,
+            grad,
+            learning_rate);
+
+    tensor_free(grad);
+
+    Tensor *flatten_grad =
+        flatten_backward(
+            fc_grad,
+            pool_out);
+
+    tensor_free(fc_grad);
+
+    Tensor *pool_grad =
+        max_pooling_backward(
+            flatten_grad,
+            relu_out,
+            cnn->pool_size,
+            cnn->pool_stride);
+
+    tensor_free(flatten_grad);
+
+    Tensor *relu_grad =
+        relu_backward(
+            pool_grad,
+            conv_out);
+
+    tensor_free(pool_grad);
+
+    Tensor *conv_grad =
+        conv_backward(
+            input,
+            relu_grad,
+            cnn->conv1_kernel,
+            cnn->conv1_kernel_size,
+            cnn->conv1_out_channels,
+            learning_rate);
+
+    tensor_free(relu_grad);
+
+    /* ---------- FREE ---------- */
+
+    tensor_free(conv_grad);
+
+    tensor_free(fc_out);
+    tensor_free(flatten_out);
+    tensor_free(pool_out);
+    tensor_free(relu_out);
+    tensor_free(conv_out);
+    tensor_free(input);
+
+    return loss;
 }

@@ -6,4 +6,6 @@
 
 void relu(Tensor *t);
 
+Tensor *relu_backward(Tensor *output_grad, Tensor *input);
+
 #endif // RELU_H

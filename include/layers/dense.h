@@ -15,4 +15,5 @@ void dense_layer_free(DenseLayer *layer);
 
 Tensor *dense_forward(DenseLayer *layer, Tensor *input);
 
+Tensor *dense_backward(DenseLayer *layer, Tensor *input, Tensor *output_grad, float learning_rate);
 #endif // DENSE_H

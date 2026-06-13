@@ -20,4 +20,7 @@ Tensor *image_to_tensor(Image *img);
 
 Tensor *flatten(Tensor *t);
 
+Tensor *flatten_backward(Tensor *output_grad, Tensor *input);
+
+
 #endif // TENSOR_H

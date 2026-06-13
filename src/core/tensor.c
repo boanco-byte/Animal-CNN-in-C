@@ -71,3 +71,29 @@ Tensor *flatten(Tensor *t) {
 
     return out;
 }
+
+Tensor *flatten_backward(Tensor *output_grad, Tensor *input){
+    if (!output_grad || !output_grad->data || !input) {
+        fprintf(stderr, "Error: Invalid arguments to flatten_backward.\n");
+        return NULL;
+    }
+
+    int total_elements = input->width * input->height * input->channels;
+
+    int grad_elements = output_grad->width * output_grad->height * output_grad->channels;
+    if (total_elements != grad_elements) {
+        fprintf(stderr, "Error: Kích thước gradient không khớp với Tensor đầu vào.\n");
+        return NULL;
+    }
+
+    Tensor *input_grad = tensor_create(input->width, input->height, input->channels);
+    if (!input_grad) {
+        fprintf(stderr, "Error: Không thể cấp phát bộ nhớ cho input_grad.\n");
+        return NULL;
+    }
+
+    memcpy(input_grad->data, output_grad->data, total_elements * sizeof(float));
+
+    return input_grad;
+}
+
